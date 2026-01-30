@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品库 - Gesture Music Paint</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .gallery-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .gallery-stats {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .work-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .work-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-primary);
+        }
+        
+        .work-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: var(--bg-tertiary);
+        }
+        
+        .work-info {
+            padding: 16px;
+        }
+        
+        .work-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .work-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .work-instrument {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .work-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .work-actions .btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .empty-gallery {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--text-muted);
+        }
+        
+        .empty-gallery-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-gallery h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--accent-primary);
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        
+        .modal-content img {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: var(--border-radius);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-container">
+        <header class="gallery-header">
+            <div>
+                <a href="/app" class="back-link">
+                    <span>←</span> 返回应用
+                </a>
+                <h1 class="gallery-title">作品库</h1>
+            </div>
+            <div class="gallery-stats" id="gallery-stats">
+                加载中...
+            </div>
+        </header>
+        
+        <div class="gallery-grid" id="gallery-grid">
+            <!-- 动态渲染 -->
+        </div>
+        
+        <div class="empty-gallery" id="empty-gallery" style="display: none;">
+            <div class="empty-gallery-icon">🎨</div>
+            <h3>还没有作品</h3>
+            <p>去应用中创作你的第一幅手势音乐画作吧！</p>
+            <a href="/app" class="btn btn-primary" style="margin-top: 16px;">开始创作</a>
+        </div>
+    </div>
+    
+    <!-- 图片预览模态框 -->
+    <div class="modal-overlay" id="image-modal">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-content">
+            <img id="modal-image" src="" alt="作品预览">
+        </div>
+    </div>
+    
+    <script>
+        const galleryGrid = document.getElementById('gallery-grid');
+        const galleryStats = document.getElementById('gallery-stats');
+        const emptyGallery = document.getElementById('empty-gallery');
+        const imageModal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+        
+        // 乐器名称映射
+        const instrumentNames = {
+            'piano': '钢琴',
+            'guitar': '吉他',
+            'drums': '鼓',
+            'synth': '合成器',
+            'strings': '弦乐'
+        };
+        
+        // 加载作品列表
+        async function loadGallery() {
+            try {
+                const response = await fetch('/api/gallery?limit=50');
+                const data = await response.json();
+                
+                if (data.works.length === 0) {
+                    galleryGrid.style.display = 'none';
+                    emptyGallery.style.display = 'block';
+                    galleryStats.textContent = '共 0 件作品';
+                    return;
+                }
+                
+                galleryStats.textContent = `共 ${data.total} 件作品`;
+                renderWorks(data.works);
+                
+            } catch (error) {
+                console.error('加载作品失败:', error);
+                galleryStats.textContent = '加载失败';
+            }
+        }
+        
+        // 渲染作品列表
+        function renderWorks(works) {
+            galleryGrid.innerHTML = works.map(work => `
+                <div class="work-card" data-id="${work.id}">
+                    <img class="work-thumbnail" 
+                         src="/api/gallery/${work.id}/thumbnail" 
+                         alt="${work.title}"
+                         onclick="viewWork('${work.id}')"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 320 180%22><rect fill=%22%231a1a2e%22 width=%22320%22 height=%22180%22/><text x=%2250%%22 y=%2250%%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2214%22>无预览</text></svg>'">
+                    <div class="work-info">
+                        <h3 class="work-title">${work.title}</h3>
+                        <div class="work-meta">
+                            <span class="work-instrument">
+                                🎵 ${instrumentNames[work.instrument] || work.instrument}
+                            </span>
+                            <span>${formatDate(work.created_at)}</span>
+                        </div>
+                        <div class="work-actions">
+                            <button class="btn btn-primary" onclick="playbackWork('${work.id}')" ${work.project_file ? '' : 'disabled'} title="${work.project_file ? '加载并回放' : '无乐谱数据'}">回放</button>
+                            <button class="btn" onclick="viewWork('${work.id}')">查看</button>
+                            <button class="btn" onclick="exportWork('${work.id}')" ${work.project_file ? '' : 'disabled'}>导出</button>
+                            <button class="btn btn-danger" onclick="deleteWork('${work.id}')">删除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 格式化日期
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 查看作品
+        function viewWork(workId) {
+            modalImage.src = `/api/gallery/${workId}/image`;
+            imageModal.classList.add('active');
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            imageModal.classList.remove('active');
+        }
+        
+        // 点击背景关闭
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) {
+                closeModal();
+            }
+        });
+        
+        // ESC 关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // 删除作品
+        async function deleteWork(workId) {
+            if (!confirm('确定要删除这件作品吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/gallery/${workId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadGallery();
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败');
+            }
+        }
+        
+        // 加载作品并回放
+        async function playbackWork(workId) {
+            try {
+                // 先加载项目
+                const response = await fetch(`/api/gallery/${workId}/project`);
+                if (!response.ok) {
+                    alert('无法加载项目数据');
+                    return;
+                }
+                const projectData = await response.json();
+                
+                // 跳转到应用页面并传递项目ID
+                window.location.href = `/app?load_project=${workId}`;
+            } catch (error) {
+                console.error('加载失败:', error);
+                alert('加载项目失败');
+            }
+        }
+        
+        // 导出作品
+        async function exportWork(workId) {
+            try {
+                const response = await fetch(`/api/gallery/${workId}/project`);
+                if (!response.ok) {
+                    alert('无法导出项目');
+                    return;
+                }
+                const projectData = await response.json();
+                
+                // 下载 JSON 文件
+                const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `project_${workId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('导出失败');
+            }
+        }
+        
+        // 页面加载
+        loadGallery();
+    </script>
+</body>
+</html>

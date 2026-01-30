@@ -1,0 +1,109 @@
+{
+  "name": "小星星 (Twinkle Twinkle Little Star)",
+  "bpm": 120,
+  "quantize": "1/4",
+  "scale": "major",
+  "root_note": 60,
+  "width": 640,
+  "height": 480,
+  "strokes": [
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 213, "y": 240, "t": 0.0, "thickness": 12},
+        {"x": 213, "y": 240, "t": 0.5, "thickness": 12},
+        {"x": 338, "y": 240, "t": 1.0, "thickness": 12},
+        {"x": 338, "y": 240, "t": 1.5, "thickness": 12},
+        {"x": 373, "y": 240, "t": 2.0, "thickness": 12},
+        {"x": 373, "y": 240, "t": 2.5, "thickness": 12},
+        {"x": 338, "y": 240, "t": 3.0, "thickness": 12}
+      ],
+      "start_t": 0.0,
+      "end_t": 3.5,
+      "stroke_id": "star_1"
+    },
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 302, "y": 240, "t": 4.0, "thickness": 12},
+        {"x": 302, "y": 240, "t": 4.5, "thickness": 12},
+        {"x": 284, "y": 240, "t": 5.0, "thickness": 12},
+        {"x": 284, "y": 240, "t": 5.5, "thickness": 12},
+        {"x": 249, "y": 240, "t": 6.0, "thickness": 12},
+        {"x": 249, "y": 240, "t": 6.5, "thickness": 12},
+        {"x": 213, "y": 240, "t": 7.0, "thickness": 12}
+      ],
+      "start_t": 4.0,
+      "end_t": 7.5,
+      "stroke_id": "star_2"
+    },
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 338, "y": 240, "t": 8.0, "thickness": 12},
+        {"x": 338, "y": 240, "t": 8.5, "thickness": 12},
+        {"x": 302, "y": 240, "t": 9.0, "thickness": 12},
+        {"x": 302, "y": 240, "t": 9.5, "thickness": 12},
+        {"x": 284, "y": 240, "t": 10.0, "thickness": 12},
+        {"x": 284, "y": 240, "t": 10.5, "thickness": 12},
+        {"x": 249, "y": 240, "t": 11.0, "thickness": 12}
+      ],
+      "start_t": 8.0,
+      "end_t": 11.5,
+      "stroke_id": "star_3"
+    },
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 338, "y": 240, "t": 12.0, "thickness": 12},
+        {"x": 338, "y": 240, "t": 12.5, "thickness": 12},
+        {"x": 302, "y": 240, "t": 13.0, "thickness": 12},
+        {"x": 302, "y": 240, "t": 13.5, "thickness": 12},
+        {"x": 284, "y": 240, "t": 14.0, "thickness": 12},
+        {"x": 284, "y": 240, "t": 14.5, "thickness": 12},
+        {"x": 249, "y": 240, "t": 15.0, "thickness": 12}
+      ],
+      "start_t": 12.0,
+      "end_t": 15.5,
+      "stroke_id": "star_4"
+    },
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 213, "y": 240, "t": 16.0, "thickness": 12},
+        {"x": 213, "y": 240, "t": 16.5, "thickness": 12},
+        {"x": 338, "y": 240, "t": 17.0, "thickness": 12},
+        {"x": 338, "y": 240, "t": 17.5, "thickness": 12},
+        {"x": 373, "y": 240, "t": 18.0, "thickness": 12},
+        {"x": 373, "y": 240, "t": 18.5, "thickness": 12},
+        {"x": 338, "y": 240, "t": 19.0, "thickness": 12}
+      ],
+      "start_t": 16.0,
+      "end_t": 19.5,
+      "stroke_id": "star_5"
+    },
+    {
+      "instrument": "piano",
+      "color": [255, 220, 100],
+      "points": [
+        {"x": 302, "y": 240, "t": 20.0, "thickness": 12},
+        {"x": 302, "y": 240, "t": 20.5, "thickness": 12},
+        {"x": 284, "y": 240, "t": 21.0, "thickness": 12},
+        {"x": 284, "y": 240, "t": 21.5, "thickness": 12},
+        {"x": 249, "y": 240, "t": 22.0, "thickness": 12},
+        {"x": 249, "y": 240, "t": 22.5, "thickness": 12},
+        {"x": 213, "y": 240, "t": 23.0, "thickness": 12}
+      ],
+      "start_t": 20.0,
+      "end_t": 23.5,
+      "stroke_id": "star_6"
+    }
+  ],
+  "created_at": "2026-01-30T00:00:00",
+  "duration": 24.0
+}

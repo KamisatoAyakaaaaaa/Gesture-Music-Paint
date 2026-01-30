@@ -1,0 +1,25 @@
+# Gesture Music Paint - 依赖包
+# Python >= 3.9
+
+# 计算机视觉
+opencv-python>=4.8.0
+
+# 手势识别
+mediapipe>=0.10.9
+
+# 数值计算
+numpy>=1.24.0
+
+# 音频处理
+pygame>=2.5.0
+
+# Web 服务器
+flask>=3.0.0
+flask-socketio>=5.3.0
+
+# 桌面 GUI（可选）
+customtkinter>=5.2.0
+pillow>=10.0.0
+
+# 开发工具（可选，用于代码质量检查）
+# pip install -r requirements-dev.txt

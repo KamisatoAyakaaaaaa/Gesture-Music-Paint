@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Music Paint - 手势音乐绘画</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🎨</span>
+                <h1>Gesture Music Paint</h1>
+                <span class="version">Web v2.0</span>
+            </div>
+            <div class="header-links">
+                <a class="header-link" href="/">官网</a>
+                <a class="header-link" href="/gallery">作品库</a>
+            </div>
+            <div class="header-status">
+                <div class="status-item" id="fps-display">
+                    <span class="status-label">FPS</span>
+                    <span class="status-value" id="fps-value">--</span>
+                </div>
+                <div class="status-item perf-metric" title="手势检测耗时">
+                    <span class="status-label">检测</span>
+                    <span class="status-value" id="detection-ms">--</span><span class="status-unit">ms</span>
+                </div>
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot disconnected"></span>
+                    <span>未连接</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 视频区域 -->
+            <section class="video-section">
+                <div class="video-container" id="video-container">
+                    <div class="video-placeholder" id="video-placeholder">
+                        <div class="placeholder-content">
+                            <span class="placeholder-icon">📷</span>
+                            <h3>点击「启动系统」开始</h3>
+                            <p>Start the system to begin</p>
+                        </div>
+                    </div>
+                    <img id="video-feed" src="" alt="Video Feed" style="display: none;">
+                    <div class="scan-line" id="scan-line"></div>
+                    <div class="playback-overlay" id="playback-overlay">
+                        <div class="playback-badge">回放中</div>
+                    </div>
+                </div>
+                
+                <!-- 底部状态栏 -->
+                <div class="status-bar">
+                    <div class="status-indicators">
+                        <div class="indicator" id="play-indicator">
+                            <span class="indicator-dot active"></span>
+                            <span>PLAY</span>
+                        </div>
+                        <div class="indicator" id="rec-indicator">
+                            <span class="indicator-dot"></span>
+                            <span>REC</span>
+                        </div>
+                        <div class="indicator" id="pause-indicator">
+                            <span class="indicator-dot"></span>
+                            <span>PAUSE</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 手势状态显示 -->
+                    <div class="gesture-display" id="gesture-display">
+                        <span class="gesture-icon" id="gesture-icon">✋</span>
+                        <span class="gesture-name" id="gesture-name">等待手势</span>
+                    </div>
+                    
+                    <div class="note-display" id="note-display">
+                        <span class="note-label">Note:</span>
+                        <span class="note-value" id="current-note">--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 控制面板 -->
+            <aside class="control-panel">
+                <div class="panel-scroll">
+                    <!-- 系统控制 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>系统控制</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <button class="btn btn-primary btn-large" id="start-btn">
+                            <span class="btn-icon">▶</span>
+                            启动系统
+                        </button>
+                        <div class="btn-row">
+                            <button class="btn" id="play-btn" disabled>播放</button>
+                            <button class="btn btn-warning" id="pause-btn" disabled>暂停</button>
+                            <button class="btn btn-danger" id="clear-btn" disabled>清空</button>
+                        </div>
+                    </div>
+
+                    <!-- 乐器选择 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>乐器选择</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="instrument-list" id="instrument-list">
+                            <!-- 动态生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 画笔粗细 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>画笔粗细 / 音量</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <input type="range" class="thickness-slider" id="thickness-slider" 
+                               min="3" max="30" value="10">
+                        <div class="thickness-info" id="thickness-info">
+                            粗细: 10px | 音量: 67
+                        </div>
+                        <div class="thickness-presets" id="thickness-presets">
+                            <!-- 动态生成 -->
+                        </div>
+                    </div>
+
+                    <!-- Master 回放 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>Master 回放</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="playback-mode-select">
+                            <label class="mode-option">
+                                <input type="radio" name="playback-mode" value="scan" checked> 扫描
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="playback-mode" value="timeline"> 时间轴
+                            </label>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn btn-primary" id="master-play-btn" disabled>
+                                <span class="btn-icon">▶</span> 回放
+                            </button>
+                            <button class="btn" id="master-pause-btn" disabled>
+                                <span class="btn-icon">⏸</span> 暂停
+                            </button>
+                            <button class="btn" id="master-stop-btn" disabled>
+                                <span class="btn-icon">■</span> 停止
+                            </button>
+                        </div>
+                        <div class="bpm-control">
+                            <label>BPM: <span id="bpm-value">120</span></label>
+                            <input type="range" id="bpm-slider" min="60" max="180" value="120">
+                        </div>
+                        <div class="playback-progress" id="playback-progress">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <div class="project-info" id="project-info">
+                            笔画: 0 | 时长: 0s
+                        </div>
+                        <div class="playback-status" id="playback-status"></div>
+                        <div class="example-section" id="example-section">
+                            <select id="example-select" class="example-select">
+                                <option value="">-- 加载示例 --</option>
+                            </select>
+                            <button class="btn btn-info btn-small" id="load-example-btn">演示</button>
+                        </div>
+                    </div>
+
+                    <!-- 音乐增强 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>节拍与伴奏</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="toggle-row">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="metronome-toggle"> 节拍器
+                            </label>
+                        </div>
+                        <div class="accompaniment-control">
+                            <label class="control-label">伴奏强度</label>
+                            <div class="level-buttons">
+                                <button class="level-btn active" data-level="off">关</button>
+                                <button class="level-btn" data-level="low">轻</button>
+                                <button class="level-btn" data-level="high">重</button>
+                            </div>
+                        </div>
+                        <div class="toggle-row" style="margin-top: 8px;">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="drum-toggle"> 鼓点
+                            </label>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="bass-toggle"> 低音
+                            </label>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="chord-toggle"> 和弦
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 录制与导出 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>录制与导出</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <button class="btn btn-danger btn-large" id="record-btn" disabled>
+                            <span class="btn-icon">●</span>
+                            开始录制
+                        </button>
+                        <div class="btn-row">
+                            <button class="btn" id="save-btn" disabled>保存画作</button>
+                            <button class="btn btn-info" id="export-btn" disabled>导出音频</button>
+                        </div>
+                    </div>
+
+                    <!-- 历史记录 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>历史记录</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="btn-row">
+                            <button class="btn" id="undo-btn" disabled>撤销 (Z)</button>
+                            <button class="btn" id="redo-btn" disabled>重做 (Y)</button>
+                        </div>
+                        <div class="history-info" id="history-info">
+                            撤销: 0 | 重做: 0
+                        </div>
+                    </div>
+
+                    <!-- 手势说明 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>手势说明</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="gesture-list">
+                            <div class="gesture-item">
+                                <span class="gesture-emoji">☝️</span>
+                                <span class="gesture-name">食指伸出</span>
+                                <span class="gesture-action">绘制旋律</span>
+                            </div>
+                            <div class="gesture-item">
+                                <span class="gesture-emoji">✋</span>
+                                <span class="gesture-name">五指张开</span>
+                                <span class="gesture-action">切换乐器</span>
+                            </div>
+                            <div class="gesture-item">
+                                <span class="gesture-emoji">✊</span>
+                                <span class="gesture-name">握拳</span>
+                                <span class="gesture-action">播放/停止</span>
+                            </div>
+                            <div class="gesture-item">
+                                <span class="gesture-emoji">✌️</span>
+                                <span class="gesture-name">比耶</span>
+                                <span class="gesture-action">录制/保存</span>
+                            </div>
+                            <div class="gesture-item">
+                                <span class="gesture-emoji">🤞</span>
+                                <span class="gesture-name">双指</span>
+                                <span class="gesture-action">选择模式</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快捷键 -->
+                    <div class="control-section">
+                        <h3 class="section-title">
+                            <span class="title-line"></span>
+                            <span>快捷键</span>
+                            <span class="title-line"></span>
+                        </h3>
+                        <div class="shortcut-list">
+                            <div class="shortcut-row">
+                                <div class="shortcut-item">
+                                    <kbd>Space</kbd>
+                                    <span>播放/暂停</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>C</kbd>
+                                    <span>清空画布</span>
+                                </div>
+                            </div>
+                            <div class="shortcut-row">
+                                <div class="shortcut-item">
+                                    <kbd>Z</kbd>
+                                    <span>撤销</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Y</kbd>
+                                    <span>重做</span>
+                                </div>
+                            </div>
+                            <div class="shortcut-row">
+                                <div class="shortcut-item">
+                                    <kbd>S</kbd>
+                                    <span>保存画作</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>R</kbd>
+                                    <span>录制</span>
+                                </div>
+                            </div>
+                            <div class="shortcut-row">
+                                <div class="shortcut-item">
+                                    <kbd>E</kbd>
+                                    <span>导出音频</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>P</kbd>
+                                    <span>暂停绘画</span>
+                                </div>
+                            </div>
+                            <div class="shortcut-row">
+                                <div class="shortcut-item">
+                                    <kbd>1-5</kbd>
+                                    <span>切换乐器</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- 通知容器 -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>手势音乐画板 - Gesture Music Paint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #2563EB;
+      --primary-light: #3B82F6;
+      --accent: #0EA5E9;
+      --bg: #030712;
+      --bg-elevated: #0f172a;
+      --bg-card: #1e293b;
+      --border: rgba(148, 163, 184, 0.1);
+      --text: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --gradient-1: linear-gradient(135deg, #2563EB 0%, #0EA5E9 100%);
+      --gradient-2: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    
+    html { scroll-behavior: smooth; }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    
+    /* 背景动画 */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .bg-glow-1 {
+      top: -200px;
+      left: -100px;
+      background: var(--primary);
+      animation: float 20s ease-in-out infinite;
+    }
+    
+    .bg-glow-2 {
+      bottom: -200px;
+      right: -100px;
+      background: var(--accent);
+      animation: float 25s ease-in-out infinite reverse;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+    
+    /* 通用容器 */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* 导航栏 */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    
+    header.scrolled {
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 1px 0 var(--border);
+    }
+    
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+    }
+    
+    .logo {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--gradient-1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-link:hover { color: var(--text); }
+    
+    .nav-btn {
+      padding: 10px 24px;
+      background: var(--gradient-1);
+      color: #fff;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
+    }
+    
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(37, 99, 235, 0.4);
+    }
+    
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 0 80px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .hero-content {
+      max-width: 800px;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary-light);
+      margin-bottom: 32px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    
+    h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+    
+    h1 .gradient-text {
+      background: var(--gradient-1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .hero-desc {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.8;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+    
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+    
+    .btn {
+      padding: 16px 36px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: var(--gradient-1);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 40px rgba(37, 99, 235, 0.4);
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+    
+    .btn svg {
+      width: 18px; height: 18px;
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 视频演示区 */
+    .demo-section {
+      padding: 0 0 120px;
+      position: relative;
+    }
+    
+    .demo-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      position: relative;
+    }
+    
+    .demo-frame {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 
+        0 0 0 1px rgba(255,255,255,0.05),
+        0 20px 80px rgba(0, 0, 0, 0.5),
+        0 0 120px rgba(37, 99, 235, 0.1);
+    }
+    
+    .demo-header {
+      background: var(--bg-card);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .demo-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    
+    .demo-dot.red { background: #ef4444; }
+    .demo-dot.yellow { background: #eab308; }
+    .demo-dot.green { background: #22c55e; }
+    
+    .demo-content {
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-elevated) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .demo-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+    }
+    
+    .demo-placeholder svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .demo-placeholder p {
+      font-size: 14px;
+    }
+    
+    /* 波浪动画 */
+    .wave-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      overflow: hidden;
+    }
+    
+    .wave {
+      position: absolute;
+      bottom: 0;
+      width: 200%;
+      height: 100%;
+      animation: wave 8s linear infinite;
+    }
+    
+    .wave path {
+      fill: rgba(37, 99, 235, 0.05);
+    }
+    
+    .wave:nth-child(2) {
+      animation-delay: -2s;
+      animation-duration: 10s;
+    }
+    
+    .wave:nth-child(2) path {
+      fill: rgba(14, 165, 233, 0.03);
+    }
+    
+    @keyframes wave {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    
+    /* Section 通用样式 */
+    section {
+      padding: 100px 0;
+      position: relative;
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    
+    .section-tag {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(37, 99, 235, 0.1);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-light);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+    
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+      font-size: 16px;
+    }
+    
+    /* 特性卡片 */
+    .features-section {
+      background: linear-gradient(180deg, transparent 0%, var(--bg-elevated) 50%, transparent 100%);
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    
+    .feature-icon {
+      width: 56px; height: 56px;
+      background: var(--gradient-1);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+    }
+    
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    
+    /* 手势控制 */
+    .gestures-section {
+      position: relative;
+    }
+    
+    .gestures-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    
+    @media (max-width: 900px) {
+      .gestures-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 500px) {
+      .gestures-grid { grid-template-columns: 1fr; }
+    }
+    
+    .gesture-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .gesture-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gradient-1);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .gesture-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(37, 99, 235, 0.4);
+    }
+    
+    .gesture-card:hover::before {
+      opacity: 0.05;
+    }
+    
+    .gesture-card .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .gesture-card h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .gesture-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* 技术架构 */
+    .arch-section {
+      background: linear-gradient(180deg, transparent 0%, var(--bg-elevated) 50%, transparent 100%);
+    }
+    
+    .arch-visual {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px;
+      margin-bottom: 48px;
+    }
+    
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .arch-node {
+      background: var(--gradient-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-align: center;
+      min-width: 130px;
+      transition: all 0.3s;
+    }
+    
+    .arch-node:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(37, 99, 235, 0.2);
+    }
+    
+    .arch-node .node-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .arch-node h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .arch-node p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .arch-arrow {
+      color: var(--primary-light);
+      font-size: 24px;
+      font-weight: 300;
+      opacity: 0.6;
+    }
+    
+    /* 技术栈 */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    
+    .tech-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.25s;
+    }
+    
+    .tech-item:hover {
+      border-color: rgba(37, 99, 235, 0.3);
+      background: rgba(30, 41, 59, 0.8);
+    }
+    
+    .tech-icon {
+      width: 44px; height: 44px;
+      background: rgba(37, 99, 235, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    
+    .tech-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .tech-item p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    /* CTA Section */
+    .cta-section {
+      padding: 120px 0;
+      text-align: center;
+      position: relative;
+    }
+    
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .cta-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    
+    .cta-desc {
+      color: var(--text-secondary);
+      font-size: 18px;
+      margin-bottom: 40px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .footer-text {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+    
+    .footer-links a:hover {
+      color: var(--text);
+    }
+    
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero { min-height: auto; padding: 140px 0 60px; }
+      section { padding: 80px 0; }
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+    
+    /* 滚动动画 */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景效果 -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  
+  <!-- 导航栏 -->
+  <header id="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <span class="logo-icon">🎨</span>
+        <span>Gesture Music Paint</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#features" class="nav-link">功能</a>
+        <a href="#gestures" class="nav-link">手势</a>
+        <a href="#architecture" class="nav-link">架构</a>
+        <a href="/gallery" class="nav-link">作品库</a>
+      </nav>
+      <a href="/app" class="nav-btn">立即体验</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <span class="badge">计算机视觉 + 实时音乐生成</span>
+          <h1>
+            用手势<span class="gradient-text">绘画</span>，<br>让创作<span class="gradient-text">发声</span>
+          </h1>
+          <p class="hero-desc">
+            基于 MediaPipe 的实时手势识别系统，将空中绘画动作转化为音乐旋律。
+            无需任何专业设备，仅凭一双手，即可完成视觉与听觉的融合创作。
+          </p>
+          <div class="hero-btns">
+            <a href="/app" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              开始创作
+            </a>
+            <a href="#features" class="btn btn-secondary">了解更多</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo 区域 -->
+    <section class="demo-section">
+      <div class="container demo-container">
+        <div class="demo-frame reveal">
+          <div class="demo-header">
+            <span class="demo-dot red"></span>
+            <span class="demo-dot yellow"></span>
+            <span class="demo-dot green"></span>
+          </div>
+          <div class="demo-content">
+            <div class="demo-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <path d="M8 21h8M12 17v4"/>
+              </svg>
+              <p>点击「开始创作」体验实时演示</p>
+            </div>
+            <div class="wave-container">
+              <svg class="wave" viewBox="0 0 1200 100" preserveAspectRatio="none">
+                <path d="M0,50 C150,100 350,0 500,50 C650,100 850,0 1000,50 C1150,100 1350,0 1500,50 L1500,100 L0,100 Z"/>
+              </svg>
+              <svg class="wave" viewBox="0 0 1200 100" preserveAspectRatio="none">
+                <path d="M0,50 C150,0 350,100 500,50 C650,0 850,100 1000,50 C1150,0 1350,100 1500,50 L1500,100 L0,100 Z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 功能特性 -->
+    <section id="features" class="features-section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Features</span>
+          <h2 class="section-title">核心功能</h2>
+          <p class="section-desc">将手势识别、实时绘画与音乐生成相结合，探索人机交互的新形式</p>
+        </div>
+        
+        <div class="features-grid">
+          <div class="feature-card reveal">
+            <div class="feature-icon">👁️</div>
+            <h3>实时手势识别</h3>
+            <p>采用 MediaPipe 深度学习模型，实时检测 21 个手部关键点，识别多种手势状态，响应延迟低于 50ms</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🎵</div>
+            <h3>空间-音乐映射</h3>
+            <p>创新的坐标映射算法：X 轴 → 音高，Y 轴 → 时值，粗细 → 音量。绘画即作曲</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🎹</div>
+            <h3>多乐器音色</h3>
+            <p>内置钢琴、吉他、鼓、合成器、弦乐 5 种乐器音色，基于 ADSR 包络的实时音频合成</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🎼</div>
+            <h3>智能音阶量化</h3>
+            <p>内置五声音阶/大调音阶量化，确保随意绘画也能产生和谐悦耳的旋律</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">💾</div>
+            <h3>作品保存回放</h3>
+            <p>保存画作为 PNG，导出项目为 JSON。支持作品库管理与完整回放</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">✨</div>
+            <h3>视觉特效</h3>
+            <p>粒子系统、发光轨迹、音波可视化，打造沉浸式的创作体验</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 手势控制 -->
+    <section id="gestures" class="gestures-section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Gestures</span>
+          <h2 class="section-title">手势控制</h2>
+          <p class="section-desc">系统识别 4 种核心手势，实现免触摸的全功能控制</p>
+        </div>
+        
+        <div class="gestures-grid">
+          <div class="gesture-card reveal">
+            <span class="icon">☝️</span>
+            <h4>食指伸出</h4>
+            <p>绘画模式，指尖轨迹实时绘制并触发音符</p>
+          </div>
+          <div class="gesture-card reveal">
+            <span class="icon">✌️</span>
+            <h4>双指</h4>
+            <p>选择模式 / 开始或停止录制</p>
+          </div>
+          <div class="gesture-card reveal">
+            <span class="icon">✊</span>
+            <h4>握拳</h4>
+            <p>播放或暂停音乐回放</p>
+          </div>
+          <div class="gesture-card reveal">
+            <span class="icon">🖐️</span>
+            <h4>张开手掌</h4>
+            <p>循环切换乐器音色</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 技术架构 -->
+    <section id="architecture" class="arch-section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-tag">Architecture</span>
+          <h2 class="section-title">系统架构</h2>
+          <p class="section-desc">模块化设计，前后端分离，支持 Web 和桌面双端部署</p>
+        </div>
+        
+        <div class="arch-visual reveal">
+          <div class="arch-flow">
+            <div class="arch-node">
+              <div class="node-icon">📷</div>
+              <h4>摄像头</h4>
+              <p>视频采集</p>
+            </div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node">
+              <div class="node-icon">🤖</div>
+              <h4>MediaPipe</h4>
+              <p>手势识别</p>
+            </div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node">
+              <div class="node-icon">🖼️</div>
+              <h4>Canvas</h4>
+              <p>绘画渲染</p>
+            </div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node">
+              <div class="node-icon">🔊</div>
+              <h4>Audio</h4>
+              <p>音频合成</p>
+            </div>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 18px; margin-bottom: 24px; text-align: center;" class="reveal">技术栈</h3>
+        <div class="tech-grid reveal">
+          <div class="tech-item">
+            <div class="tech-icon">🐍</div>
+            <div>
+              <h4>Python 3.9+</h4>
+              <p>后端开发语言</p>
+            </div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">👁️</div>
+            <div>
+              <h4>OpenCV</h4>
+              <p>图像处理</p>
+            </div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">🤖</div>
+            <div>
+              <h4>MediaPipe</h4>
+              <p>手势识别 AI</p>
+            </div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">🎮</div>
+            <div>
+              <h4>Pygame</h4>
+              <p>音频合成</p>
+            </div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">🌐</div>
+            <div>
+              <h4>Flask</h4>
+              <p>Web 服务框架</p>
+            </div>
+          </div>
+          <div class="tech-item">
+            <div class="tech-icon">⚡</div>
+            <div>
+              <h4>WebSocket</h4>
+              <p>实时通信</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="container">
+        <div class="cta-content reveal">
+          <h2 class="cta-title">准备好开始创作了吗？</h2>
+          <p class="cta-desc">无需安装任何软件，打开浏览器，用你的双手开启音乐之旅</p>
+          <a href="/app" class="btn btn-primary" style="font-size: 16px; padding: 18px 48px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            立即体验
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-inner">
+      <p class="footer-text">2026 Gesture Music Paint | 基于计算机视觉的交互式音乐绘画系统</p>
+      <div class="footer-links">
+        <a href="/gallery">作品库</a>
+        <a href="/app">应用</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 导航栏滚动效果
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 50);
+    });
+    
+    // 滚动显示动画
+    const reveals = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    
+    reveals.forEach(el => revealObserver.observe(el));
+  </script>
+</body>
+</html>
